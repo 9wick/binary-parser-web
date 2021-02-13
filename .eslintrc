@@ -1,0 +1,47 @@
+{
+  "root": true,
+  "env": {
+    "browser": true,
+    "es6": true,
+    "node": true
+  },
+  "extends": [
+    "plugin:vue/essential",
+    "eslint:recommended",
+    "plugin:vue/vue3-essential",
+    "@vue/typescript/recommended",
+    "@vue/prettier",
+    "@vue/prettier/@typescript-eslint"
+  ],
+  "parserOptions": {
+    "parser":"@typescript-eslint/parser",
+    "ecmaVersion": 2020,
+     "ecmaFeatures": {
+      "legacyDecorators": true
+    }
+  },
+  "rules": {
+    "prettier/prettier": [
+      "error",
+      {
+        "singleQuote": true,
+        "trailingComma": "es5"
+      }
+    ],
+    "no-console": "off",
+    "no-inner-declarations": "warn",
+    "no-constant-condition": [
+      "error",
+      {
+        "checkLoops": false
+      }
+    ],
+    "no-unused-vars": [
+      "error",
+      {
+        "args": "none"
+      }
+    ],
+    "no-var": "error"
+  }
+}
