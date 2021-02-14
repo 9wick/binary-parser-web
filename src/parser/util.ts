@@ -41,18 +41,17 @@ export class CustomParser extends Parser {
       count++;
     }
 
-    result.raw = buffer.slice(0, result._endPosition);
+    // result.raw = buffer.slice(0, result._endPosition);
 
-    if (!root) {
-      return result;
-    }
     const removePrivateKeys = (obj: any) => {
       const returnVal: any = {};
       for (const one of Object.keys(obj).sort()) {
-        if (one.startsWith('_')) {
+        if (root && one.startsWith('_')) {
           continue;
         }
-        if (typeof obj[one] === 'object') {
+        if (Array.isArray(obj[one])) {
+          returnVal[one] = obj[one].map(removePrivateKeys);
+        } else if (typeof obj[one] === 'object') {
           returnVal[one] = removePrivateKeys(obj[one]);
         } else {
           returnVal[one] = obj[one];
@@ -88,10 +87,30 @@ export class CustomParser extends Parser {
     if (f) {
       f(parser);
     }
-    parser.saveOffset('_endPosition');
+    parser
+      .saveOffset('_endPosition')
+      .seek(function() {
+        // @ts-ignore
+        return -1 * (this._endPosition - this._startPosition);
+      })
+      .buffer('_raw', {
+        length: function() {
+          // @ts-ignore
+          return this._endPosition - this._startPosition;
+        },
+      });
 
+    return parser;
+  }
+
+  static getNestParser(f?: (p: CustomParser) => void) {
+    const parser = new CustomParser();
+    if (f) {
+      f(parser);
+    }
     return parser;
   }
 }
 
 export const getDefaultParser = CustomParser.getDefaultParser;
+export const getNestParser = CustomParser.getNestParser;

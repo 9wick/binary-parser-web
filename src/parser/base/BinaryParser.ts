@@ -14,8 +14,8 @@ interface ParserOptions {
   formatter?: (item: any) => string | number;
   encoder?: (item: any) => any;
   encoding?: string;
-  readUntil?: 'eof' | ((item: any, buffer: any) => number);
-  encodeUntil?: 'eof' | ((item: any, buffer: any) => number);
+  readUntil?: 'eof' | ((item: any, buffer: any) => boolean);
+  encodeUntil?: 'eof' | ((item: any, buffer: any) => boolean);
   greedy?: boolean;
   choices?: { [key: number]: string | Parser };
   defaultChoice?: string | Parser;
@@ -28,7 +28,6 @@ interface ParserOptions {
   key?: string;
   tag?: string;
   offset?: number | string | ((item: any) => number);
-
 }
 
 interface EncoderOptions {
@@ -220,6 +219,7 @@ export class Parser {
   endian: Endianess = 'be';
   constructorFn: Function | null = null;
   alias: string | null = null;
+  lastOffset:number = 0;
   smartBufferSize: number;
   encoderOpts: EncoderOptions;
 
@@ -707,9 +707,13 @@ export class Parser {
 
     if (!this.alias) {
       this.addRawCode(ctx);
+      // ctx.pushCode(`return {result:vars, offset:offset};`);
+
     } else {
       this.addAliasedCode(ctx);
-      ctx.pushCode(`return ${FUNCTION_PREFIX + this.alias}(0).result;`);
+      // ctx.pushCode(`return ${FUNCTION_PREFIX + this.alias}(0).result;`);
+      ctx.pushCode(`return {result:${FUNCTION_PREFIX + this.alias}(0).result, offset:${FUNCTION_PREFIX + this.alias}(0).offset};`);
+
     }
 
     return ctx;
@@ -753,7 +757,7 @@ export class Parser {
 
     this.resolveReferences(ctx);
 
-    ctx.pushCode('return vars;');
+    ctx.pushCode('return {vars, offset};');
   }
 
   private addRawCodeEncode(ctx: Context) {
@@ -766,7 +770,7 @@ export class Parser {
 
     this.resolveReferences(ctx, 'encode');
 
-    ctx.pushCode('return smartBuffer.toBuffer();');
+    ctx.pushCode('return {vars:smartBuffer.toBuffer(), offset};');
   }
 
   private addAliasedCode(ctx: Context) {
@@ -824,7 +828,7 @@ export class Parser {
   compile() {
     const importPath = 'imports';
     const ctx = this.getContext(importPath);
-    this.compiled = new Function(
+    let result = this.compiled = new Function(
       importPath,
       'TextDecoder',
       `return function (buffer, constructorFn) { ${ctx.code} };`
@@ -834,6 +838,8 @@ export class Parser {
         ? require('util').TextDecoder
         : TextDecoder
     );
+    this.lastOffset = result.offset;
+    return result.vars;
   }
 
   compileEncode() {
@@ -906,13 +912,16 @@ export class Parser {
     return size;
   }
 
+
+
   // Follow the parser chain till the root and start parsing from there
   parse(buffer: Buffer | Uint8Array) {
     if (!this.compiled) {
       this.compile();
     }
 
-    return this.compiled!(buffer, this.constructorFn);
+    let result =  this.compiled!(buffer, this.constructorFn);
+    return result.vars;
   }
 
   // Follow the parser chain till the root and start encoding from there
@@ -922,6 +931,10 @@ export class Parser {
     }
 
     return this.compiledEncode!(obj);
+  }
+
+  getLastOffset(){
+    return this.lastOffset;
   }
 
   private setNextParser(type: Types, varName?: string, options?: ParserOptions) {
@@ -1381,13 +1394,14 @@ export class Parser {
       ctx.pushCode(`${cur} = dataView.getUint8(offset);`);
       const func = ctx.addImport(pred);
       ctx.pushCode(
-        `if (${func}.call(this, ${cur}, buffer.subarray(offset))) break;`
+        `if (${func}.call(this, ${cur}, buffer.subarray(offset), offset, dataView.byteLength)) break;`
       );
       ctx.pushCode(`offset += 1;`);
       ctx.pushCode(`}`);
       ctx.pushCode(`${varName} = buffer.subarray(${start}, offset);`);
     } else if (this.options.readUntil === 'eof') {
       ctx.pushCode(`${varName} = buffer.subarray(offset);`);
+      ctx.pushCode("offset = buffer.length;");
     } else {
       const len = ctx.generateOption(this.options.length);
 
@@ -1449,7 +1463,7 @@ export class Parser {
         const tempVar = ctx.generateTmpVariable();
         ctx.pushCode(`var ${tempVar} = ${FUNCTION_PREFIX + type}(offset);`);
         ctx.pushCode(
-          `var ${item} = ${tempVar}.result; offset = ${tempVar}.offset;`
+          `var ${item} = ${tempVar}.vars; offset = ${tempVar}.offset;`
         );
         if (type !== this.alias) ctx.addReference(type);
       }
@@ -1473,7 +1487,7 @@ export class Parser {
       const pred = this.options.readUntil;
       const func = ctx.addImport(pred);
       ctx.pushCode(
-        `while (!${func}.call(this, ${item}, buffer.subarray(offset)));`
+        `while (!${func}.call(this, ${item}, buffer.subarray(offset), offset, dataView.byteLength));`
       );
     }
   }
@@ -1591,7 +1605,7 @@ export class Parser {
         const tempVar = ctx.generateTmpVariable();
         ctx.pushCode(`var ${tempVar} = ${FUNCTION_PREFIX + type}(offset);`);
         ctx.pushCode(
-          `${varName} = ${tempVar}.result; offset = ${tempVar}.offset;`
+          `${varName} = ${tempVar}.vars; offset = ${tempVar}.offset;`
         );
         if (type !== this.alias) ctx.addReference(type);
       }
@@ -1691,7 +1705,7 @@ export class Parser {
         `var ${tempVar} = ${FUNCTION_PREFIX + this.options.type}(offset);`
       );
       ctx.pushCode(
-        `${nestVar} = ${tempVar}.result; offset = ${tempVar}.offset;`
+        `${nestVar} = ${tempVar}.vars; offset = ${tempVar}.offset;`
       );
       if (this.options.type !== this.alias) ctx.addReference(this.options.type!);
     }

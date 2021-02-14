@@ -22,8 +22,10 @@ export class Context {
     if (name) {
       arr.push(name);
     }
-
-    return arr.join('.');
+    if (arr.length < 1) {
+      return arr.join('.');
+    }
+    return arr[0] + arr.slice(1).map(e => `["${e}"]`);
   }
 
   generateOption(val: number | string | Function | null | undefined) {

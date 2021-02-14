@@ -1,9 +1,9 @@
-import { getDefaultParser } from '@/parser/util';
+import { getDefaultParser, getNestParser } from '@/parser/util';
 
-const advFlags = getDefaultParser(parser => {
+const advFlags = getNestParser(parser => {
   parser
     //上位ビットから
-    .bit3('BIT6_8_Reserved')
+    .bit3('BIT6-8_Reserved')
     .bit1('BIT5_Simultaneous_LE_and_BR_ERD_to_Same_Device_Capable_Host')
     .bit1('BIT4_Simultaneous_LE_and_BR_ERD_to_Same_Device_Capable_Controller')
     .bit1('BIT3_BR_EDR_Not_Supported')
@@ -20,7 +20,7 @@ const oneAdPaser = getDefaultParser(parser => {
       choices: {
         1: advFlags,
       },
-      defaultChoice: getDefaultParser(p => {
+      defaultChoice: getNestParser(p => {
         p.array('data', {
           length: function() {
             // @ts-ignore
@@ -33,7 +33,11 @@ const oneAdPaser = getDefaultParser(parser => {
 });
 
 export const BleAdvertisementParser = getDefaultParser(parser => {
-  parser.endianess('little').repeat('adv', {
+  parser.endianess('little').array('adv', {
     type: oneAdPaser,
+    readUntil: function(item, subArray) {
+      // @ts-ignore
+      return subArray.length === 0;
+    },
   });
 });

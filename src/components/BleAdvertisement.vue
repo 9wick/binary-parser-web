@@ -48,6 +48,12 @@ export default class BleAdvertisement extends Vue {
   results: any = { error: 'no input' };
   resetKey = 1;
   code = '';
+
+  mounted() {
+    this.code = BleAdvertisementParser.getCode();
+    console.log(this.code);
+  }
+
   startParse() {
     try {
       const dataArray = this.getInputDataArray();
@@ -62,7 +68,6 @@ export default class BleAdvertisement extends Vue {
       debugger;
       this.results = { error: e.message, e };
     }
-    this.code = BleAdvertisementParser.getCode();
   }
 
   getInputDataArray() {
