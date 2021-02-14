@@ -42,6 +42,8 @@
         "args": "none"
       }
     ],
+    "@typescript-eslint/ban-ts-ignore": "off",
+    "no-debugger" : "off",
     "no-var": "error"
   }
 }

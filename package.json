@@ -9,9 +9,13 @@
   },
   "dependencies": {
     "@vue/cli": "^4.5.11",
+    "binary-parser-encoder": "^1.5.3",
     "core-js": "^3.6.5",
+    "smart-buffer": "^4.1.0",
     "vue": "^3.0.0",
     "vue-class-component": "^8.0.0-0",
+    "vue-json-tree": "^0.4.3",
+    "vue-json-viewer": "^2.2.18",
     "vue-router": "^4.0.0-0"
   },
   "devDependencies": {
