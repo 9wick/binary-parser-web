@@ -25,7 +25,13 @@ export class Context {
     if (arr.length < 1) {
       return arr.join('.');
     }
-    return arr[0] + arr.slice(1).map(e => `["${e}"]`);
+    return (
+      arr[0] +
+      arr
+        .slice(1)
+        .map(e => `["${e}"]`)
+        .join('')
+    );
   }
 
   generateOption(val: number | string | Function | null | undefined) {
