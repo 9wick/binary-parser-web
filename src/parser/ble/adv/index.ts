@@ -15,6 +15,12 @@ const oneAdPaser = getDefaultParser(parser => {
   parser
     .uint8('length')
     .uint8('type')
+    .meaning('typeString', {
+      tag: 'type',
+      meanings: {
+        1: 'Flags',
+      },
+    })
     .choice({
       tag: 'type',
       choices: {

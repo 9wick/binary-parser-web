@@ -18,6 +18,7 @@ interface ParserOptions {
   encodeUntil?: 'eof' | ((item: any, buffer: any) => boolean);
   greedy?: boolean;
   choices?: { [key: number]: string | Parser };
+  meanings?: { [key: number]: string  };
   defaultChoice?: string | Parser;
   zeroTerminated?: boolean;
   clone?: boolean;
@@ -42,6 +43,7 @@ type ComplexTypes =
   | 'buffer'
   | 'array'
   | 'choice'
+  | 'meaning'
   | 'nest'
   | 'seek'
   | 'pointer'
@@ -201,6 +203,7 @@ const CAPITILIZED_TYPE_NAMES: { [key in Types]: string } = {
   buffer: 'Buffer',
   array: 'Array',
   choice: 'Choice',
+  meaning: 'Meaning',
   nest: 'Nest',
   seek: 'Seek',
   pointer: 'Pointer',
@@ -576,6 +579,36 @@ export class Parser {
     }
 
     return this.setNextParser('array', varName, options);
+  }
+
+  meaning(varName: string , options: ParserOptions){
+    if (!options || !options.tag) {
+      throw new Error('Tag option of array is not defined.');
+    }
+    if (!options || !options.meanings) {
+      throw new Error('Meanings is not defined.');
+    }
+    Object.keys(options.meanings).forEach((keyString: string) => {
+      const key = parseInt(keyString, 10);
+      const value = options!.meanings![key];
+
+      if (isNaN(key)) {
+        throw new Error('Key of meaning must be a number.');
+      }
+
+      if (!value) {
+        throw new Error(`meanings Case ${keyString} of ${varName} is not valid.`);
+      }
+
+      if (
+        typeof value !== 'string'
+      ) {
+        throw new Error(
+          `meanning type "${value}" is not supported.`
+        );
+      }
+    });
+    return this.setNextParser('meaning', varName as string, options);
   }
 
   choice(varName: string | ParserOptions, options?: ParserOptions) {
@@ -1001,6 +1034,9 @@ export class Parser {
         case 'choice':
           this.generateChoice(ctx);
           break;
+        case 'meaning':
+          this.generateMeaning(ctx);
+          break;
         case 'pointer':
           this.generatePointer(ctx);
           break;
@@ -1071,6 +1107,9 @@ export class Parser {
           break;
         case 'choice':
           this.generate_encodeChoice(ctx);
+          break;
+        case 'meaning':
+          this.generate_encodeMeaning(ctx);
           break;
         case 'pointer':
           this.generate_encodePointer(ctx);
@@ -1666,6 +1705,24 @@ export class Parser {
     ctx.pushCode('}');
   }
 
+  private generateMeaning(ctx: Context) {
+    const tag = ctx.generateOption(this.options.tag);
+    if (this.varName) {
+      ctx.pushCode(`${ctx.generateVariable(this.varName)} = ${tag};`);
+    }
+    ctx.pushCode(`switch(${tag}) {`);
+    Object.keys(this.options.meanings!).forEach(tag => {
+      const value = this.options.meanings![parseInt(tag, 10)];
+
+      ctx.pushCode(`case ${tag}:`);
+      ctx.pushCode(`${ctx.generateVariable(this.varName)} = "${value}";`);
+      ctx.pushCode('break;');
+    });
+    ctx.pushCode('default:');
+    ctx.pushCode(`${ctx.generateVariable(this.varName)} = "unknown";`);
+    ctx.pushCode('}');
+  }
+
   private generate_encodeChoice(ctx: Context) {
     const tag = ctx.generateOption(this.options.tag);
     ctx.pushCode(`switch(${tag}) {`);
@@ -1687,6 +1744,12 @@ export class Parser {
       ctx.generateError(`"Met undefined tag value " + ${tag} + " at choice"`);
     }
     ctx.pushCode('}');
+  }
+
+
+  private generate_encodeMeaning(ctx: Context) {
+
+    ctx.pushCode(`throw new Error("unsuported generate_encodeMeaning" )`);
   }
 
   private generateNest(ctx: Context) {
