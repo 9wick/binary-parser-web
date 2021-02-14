@@ -1,9 +1,9 @@
 <template>
   <div>
     <div id="nav">
-      <router-link to="/">BleAdv</router-link>
+      <router-link to="/ble-adv">BleAdv</router-link>
       |
-      <router-link to="/hci">BleHci</router-link>
+      <router-link to="/ble-hci">BleHci</router-link>
     </div>
     <router-view />
   </div>

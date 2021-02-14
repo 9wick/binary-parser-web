@@ -112,11 +112,68 @@ const onHciAclDataParser = getDefaultParser(parser => {
     });
 });
 
+const onHciLeEventParser = getDefaultParser(parser => {
+  parser.enum('subEventCode', 'uint8', {
+    list: {
+      0x01: { meaning: 'LE Connection Complete' },
+      0x02: { meaning: 'LE Advertising Report' },
+      0x03: { meaning: 'LE Connection Update Complete' },
+      0x04: { meaning: 'LE Read Remote Used Features Complete' },
+      0x05: { meaning: 'LE Long Term Key Requested' },
+      0x06: { meaning: 'LE Remote Connection Parameter Request' },
+      0x07: { meaning: 'LE Data Length Change' },
+      0x08: { meaning: 'LE Read Local P256 Public Key Complete' },
+      0x09: { meaning: 'LE Generate DHKey Complete' },
+      0x0a: { meaning: 'LE Enhanced Connection Complete' },
+      0x0b: { meaning: 'LE Direct Advertising Report' },
+    },
+  });
+});
+const onHciEventParser = getDefaultParser(parser => {
+  parser
+    .uint8('eventCode')
+    .uint8('length')
+    .enum('eventCode', null, {
+      list: {
+        0x05: { meaning: 'Disconnection Complete' },
+        0x08: { meaning: 'Encryption Change' },
+        0x0c: { meaning: 'Read Remote Version Information Complete' },
+        0x0e: { meaning: 'Command Complete' },
+        0x0f: { meaning: 'Command Status' },
+        0x10: { meaning: 'Hardware Error (optional)' },
+        0x13: {
+          meaning: 'Number Of Completed Packets',
+          choice: getDefaultParser(p => {
+            p.uint8('number of handle')
+              .array('connection handles', {
+                type: 'uint16le',
+                length: function() {
+                  // @ts-ignore
+                  return this['number of handle'];
+                },
+              })
+              .array('num of completed packets', {
+                type: 'uint16le',
+                length: function() {
+                  // @ts-ignore
+                  return this['number of handle'];
+                },
+              });
+          }),
+        },
+        0x1a: { meaning: 'Data Buffer Overflow' },
+        0x30: { meaning: 'Encryption Key Refresh Complete' },
+        0x57: { meaning: 'Authenticated Payload Timeout Expired' },
+        0x3e: { meaning: 'LE Events', choice: onHciLeEventParser },
+      },
+    });
+});
+
 export const BleHciParser = getDefaultParser(parser => {
   parser.endianess('little').enum('evnetType', 'uint8', {
     list: {
       2: { meaning: 'HCI_ACLDATA_PKT', choice: onHciAclDataParser },
-      4: { meaning: 'HCI_EVENT_PKT', choice: BleAdvertisementParser },
+      4: { meaning: 'HCI_EVENT_PKT', choice: onHciEventParser },
     },
   });
   // .meaning('typeMeaning', { tag: 'type', meanings: { 1: 'adv' } })

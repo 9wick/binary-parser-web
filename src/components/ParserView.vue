@@ -18,7 +18,6 @@
       value="dec"
     /><label for="number_type_dec">DEC(0~255)</label><br />
 
-    <button v-on:click="startParse">Parse</button>
     <button v-on:click="addQuery">Parse</button>
     <br />
     <br />
@@ -44,10 +43,11 @@ export default class ParserView extends Vue {
   results: any = { error: 'no input' };
   resetKey = 1;
 
-  @Prop({ type: Object })
+  @Prop({ type: Function })
   getParser!: () => CustomParser;
 
   mounted() {
+    console.log(this.getParser().getCode());
     this.startParse();
   }
 

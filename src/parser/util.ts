@@ -42,8 +42,15 @@ export class CustomParser extends Parser {
     }
 
     // result.raw = buffer.slice(0, result._endPosition);
-
+    debugger;
     const removePrivateKeys = (obj: any) => {
+      if (
+        typeof obj === 'boolean' ||
+        typeof obj === 'string' ||
+        typeof obj === 'number'
+      ) {
+        return obj;
+      }
       const returnVal: any = {};
       for (const one of Object.keys(obj).sort()) {
         if (root && one.startsWith('_') && one !== '_raw') {
