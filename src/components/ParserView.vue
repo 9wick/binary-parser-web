@@ -19,6 +19,7 @@
     /><label for="number_type_dec">DEC(0~255)</label><br />
 
     <button v-on:click="startParse">Parse</button>
+    <button v-on:click="addQuery">Parse</button>
     <br />
     <br />
     results: <br />
@@ -29,7 +30,7 @@
 <script lang="ts">
 import { Options, Vue } from 'vue-class-component';
 import JsonTree from 'vue-json-tree';
-import { Prop } from 'vue-property-decorator';
+import { Prop, Watch } from 'vue-property-decorator';
 import { CustomParser } from '@/parser/util';
 
 @Options({
@@ -47,28 +48,38 @@ export default class ParserView extends Vue {
   getParser!: () => CustomParser;
 
   mounted() {
+    this.startParse();
+  }
+
+  addQuery() {
+    this.$router.push({
+      query: { text: this.inputText, type: this.inputType },
+    });
+  }
+
+  startParse() {
     this.inputText = this.$route.query.text ? '' + this.$route.query.text : '';
     this.inputType = this.$route.query.type
       ? '' + this.$route.query.type
       : 'hex';
-    console.log(this.getParser().getCode());
-  }
-
-  startParse() {
     try {
       const dataArray = this.getInputDataArray();
+      if (dataArray.length === 0) {
+        this.results = { error: 'no input' };
+        return;
+      }
       this.results = this.getParser().parse(Buffer.from(dataArray));
-      // .split('\n')
-      // .join('<br/>');
       this.resetKey++;
     } catch (e) {
-      debugger;
+      console.error(e);
       this.results = { error: e.message, e };
     }
   }
 
   getInputDataArray() {
-    const dataString = this.inputText;
+    const dataString = this.$route.query.text
+      ? '' + this.$route.query.text
+      : '';
     let dataArray = [];
     if (dataString.indexOf(',') >= 0) {
       dataArray = dataString
@@ -101,6 +112,11 @@ export default class ParserView extends Vue {
       });
     }
     return dataArray;
+  }
+
+  @Watch('$route')
+  routeChange(from: any, to: any) {
+    this.startParse();
   }
 }
 </script>

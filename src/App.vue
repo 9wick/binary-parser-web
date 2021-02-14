@@ -3,7 +3,7 @@
     <div id="nav">
       <router-link to="/">BleAdv</router-link>
       |
-      <router-link to="/hci">Hci</router-link>
+      <router-link to="/hci">BleHci</router-link>
     </div>
     <router-view />
   </div>
