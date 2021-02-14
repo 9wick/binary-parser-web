@@ -47,7 +47,7 @@ export default class ParserView extends Vue {
   getParser!: () => CustomParser;
 
   mounted() {
-    console.log(this.getParser().getCode());
+    // console.log(this.getParser().getCode());
     this.startParse();
   }
 

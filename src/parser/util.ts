@@ -42,7 +42,6 @@ export class CustomParser extends Parser {
     }
 
     // result.raw = buffer.slice(0, result._endPosition);
-    debugger;
     const removePrivateKeys = (obj: any) => {
       if (
         typeof obj === 'boolean' ||
