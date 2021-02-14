@@ -1,4 +1,4 @@
 module.exports = {
   publicPath: '/binary-parser-web/',
-  outputDir: 'docs'
-}
+  outputDir: 'docs',
+};

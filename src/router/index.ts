@@ -10,7 +10,8 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/ble-adv',
     name: 'BleAdv',
-    component: BleAdvertisement,
+    component: () =>
+      import(/* webpackChunkName: "about" */ '../views/BleAdvertisement.vue'),
   },
   {
     path: '/ble-hci',
@@ -24,7 +25,7 @@ const routes: Array<RouteRecordRaw> = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  history: createWebHistory('/#/'),
   routes,
 });
 
