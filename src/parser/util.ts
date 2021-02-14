@@ -46,10 +46,12 @@ export class CustomParser extends Parser {
     const removePrivateKeys = (obj: any) => {
       const returnVal: any = {};
       for (const one of Object.keys(obj).sort()) {
-        if (root && one.startsWith('_')) {
+        if (root && one.startsWith('_') && one !== '_raw') {
           continue;
         }
-        if (Array.isArray(obj[one])) {
+        if (obj[one] instanceof Buffer) {
+          returnVal[one] = obj[one].toString('hex');
+        } else if (Array.isArray(obj[one])) {
           returnVal[one] = obj[one].map(removePrivateKeys);
         } else if (typeof obj[one] === 'object') {
           returnVal[one] = removePrivateKeys(obj[one]);
@@ -66,24 +68,42 @@ export class CustomParser extends Parser {
     return super.getCode() + '\n //---------\n' + this.repeatParser?.getCode();
   }
 
+  enum(varName: string, type: any | null, options: any) {
+    const meanings: any = CustomParser.list2meaning(options.list);
+    const choices: any = CustomParser.list2choices(options.list);
+
+    const defaultParser = CustomParser.getNestParser(p => {
+      p.buffer('data', {
+        readUntil: 'eof',
+      });
+    });
+    Object.keys(options.list).map(key => {
+      meanings[key] = options.list[key].meaning;
+      choices[key] = options.list[key].choice || defaultParser;
+    });
+
+    const choiceOptions = {
+      tag: varName,
+      choices,
+      defaultChoice: options.defaultChoice
+        ? options.defaultChoice
+        : defaultParser,
+    };
+    const choiceArg1 =
+      options.nest !== false ? varName + 'Data' : choiceOptions;
+    const choiceArg2 = options.nest !== false ? choiceOptions : undefined;
+    if (type) {
+      this.primitiveN(type, varName);
+    }
+    this.meaning(varName + 'String', {
+      tag: varName,
+      meanings,
+    }).choice(choiceArg1, choiceArg2);
+    return this;
+  }
+
   static getDefaultParser(f?: (p: CustomParser) => void) {
     const parser = new CustomParser().saveOffset('_startPosition');
-    // .buffer('_full', {
-    //   readUntil: function(item: any, buffer: any) {
-    //     // @ts-ignore
-    //     // eslint-disable-next-line @typescript-eslint/no-this-alias
-    //     const self: any = this;
-    //     self.__bufferTmp = self.__bufferTmp || [];
-    //     self.__bufferTmp = [...self.__bufferTmp, item];
-    //
-    //     return self.__bufferTmp.length > 2 ? true : false;
-    //   } as any,
-    // })
-    // .saveOffset('_fullEndPosition')
-    // .seek(function() {
-    //   //@ts-ignore
-    //   return (this._fullEndPosition - this._startPosition) * -1;
-    // });
     if (f) {
       f(parser);
     }
@@ -93,7 +113,8 @@ export class CustomParser extends Parser {
         // @ts-ignore
         return -1 * (this._endPosition - this._startPosition);
       })
-      .buffer('_raw', {
+      .string('_raw', {
+        encoding: 'hex',
         length: function() {
           // @ts-ignore
           return this._endPosition - this._startPosition;
@@ -103,12 +124,35 @@ export class CustomParser extends Parser {
     return parser;
   }
 
+  hex(varName: string, options: any) {
+    options.encoding = 'hex';
+    return this.string(varName, options);
+  }
+
   static getNestParser(f?: (p: CustomParser) => void) {
     const parser = new CustomParser();
     if (f) {
       f(parser);
     }
     return parser;
+  }
+
+  static list2meaning(list: any) {
+    const meanings: any = {};
+    Object.keys(list).map(key => {
+      meanings[key] = list[key].meaning;
+    });
+    return meanings;
+  }
+
+  static list2choices(list: any) {
+    const choices: any = {};
+    Object.keys(list).map(key => {
+      if (list[key]) {
+        choices[key] = list[key].choice;
+      }
+    });
+    return choices;
   }
 }
 

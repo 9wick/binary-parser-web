@@ -259,7 +259,7 @@ export class Parser {
     );
   }
 
-  private primitiveN(
+   primitiveN(
     type: PrimitiveTypes,
     varName: string,
     options?: ParserOptions
@@ -1329,7 +1329,7 @@ export class Parser {
       const end = 'dataView.getUint8(offset -1) == 0 ? offset - 1 : offset';
       ctx.pushCode(
         isHex
-          ? `${name} = Array.from(buffer.subarray(${start}, ${end}), ${toHex}).join('');`
+          ? `${name} = Array.from(new Uint8Array(buffer.subarray(${start}, ${end})), ${toHex}).join('');`
           : `${name} = new TextDecoder('${encoding}').decode(buffer.subarray(${start}, ${end}));`
       );
     } else if (this.options.length) {

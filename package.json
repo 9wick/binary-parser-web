@@ -16,6 +16,7 @@
     "vue-class-component": "^8.0.0-0",
     "vue-json-tree": "^0.4.3",
     "vue-json-viewer": "^2.2.18",
+    "vue-property-decorator": "^9.1.2",
     "vue-router": "^4.0.0-0"
   },
   "devDependencies": {

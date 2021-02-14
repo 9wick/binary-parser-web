@@ -37,7 +37,7 @@
       }
     ],
     "no-unused-vars": [
-      "error",
+      "warn",
       {
         "args": "none"
       }
