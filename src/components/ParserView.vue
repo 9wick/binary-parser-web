@@ -1,28 +1,37 @@
 <template>
   <div>
-    Input data (space or comma separated data)<br />
-    <input type="text" v-model="inputText" style="width:100%" /><br />
-    number type :
-    <input
-      type="radio"
-      name="number_type"
-      id="number_type_hex"
-      v-model="inputType"
-      value="hex"
-    /><label for="number_type_hex">HEX(0x0〜0xFF)</label>
-    <input
-      type="radio"
-      name="number_type"
-      id="number_type_dec"
-      v-model="inputType"
-      value="dec"
-    /><label for="number_type_dec">DEC(0~255)</label><br />
+    <form @submit.prevent="addQuery">
+      Input data (space or comma separated data)<br />
+      <input type="text" v-model="inputText" style="width:100%" /><br />
+      number type :
+      <input
+        type="radio"
+        name="number_type"
+        id="number_type_hex"
+        v-model="inputType"
+        value="hex"
+      /><label for="number_type_hex">HEX(0x0〜0xFF)</label>
+      <input
+        type="radio"
+        name="number_type"
+        id="number_type_dec"
+        v-model="inputType"
+        value="dec"
+      /><label for="number_type_dec">DEC(0~255)</label>
+      <input
+        type="radio"
+        name="number_type"
+        id="number_hex_string"
+        v-model="inputType"
+        value="hex_string"
+      /><label for="number_hex_string">HEX non-separated String</label><br />
 
-    <button v-on:click="addQuery">Parse</button>
+      <button type="submit">Parse</button>
+    </form>
     <br />
     <br />
     results: <br />
-    <json-tree :data="results" :level="1" :key="resetKey"></json-tree>
+    <json-tree :data="results" :level="4" :key="resetKey"></json-tree>
   </div>
 </template>
 
@@ -81,6 +90,10 @@ export default class ParserView extends Vue {
       ? '' + this.$route.query.text
       : '';
     let dataArray = [];
+    if (this.inputType === 'hex_string') {
+      dataArray = Array.from(Buffer.from(dataString, 'hex'));
+      return dataArray;
+    }
     if (dataString.indexOf(',') >= 0) {
       dataArray = dataString
         .trim()

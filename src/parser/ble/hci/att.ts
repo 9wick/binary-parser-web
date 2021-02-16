@@ -89,10 +89,26 @@ const AttOpCodes = {
       .buffer('attributeValue', { readUntil: 'eof' }),
   },
   0x07: { meaning: 'Find By Type Value Response' },
-  0x08: { meaning: 'Read By Type Request' },
+  0x08: {
+    meaning: 'Read By Type Request',
+    choice: getNestParser(p =>
+      p
+        .uint16le('start handle')
+        .uint16le('end handle')
+        .buffer('attributeValue', { readUntil: 'eof' })
+    ),
+  },
   0x09: { meaning: 'Read By Type Response' },
-  0x0a: { meaning: 'Read Request' },
-  0x0b: { meaning: 'Read Response' },
+  0x0a: {
+    meaning: 'Read Request',
+    choice: getNestParser(p => p.uint16le('handle')),
+  },
+  0x0b: {
+    meaning: 'Read Response',
+    choice: getNestParser(p =>
+      p.buffer('attributeValue', { readUntil: 'eof' })
+    ),
+  },
   0x0c: { meaning: 'Read Blob Request' },
   0x0d: { meaning: 'Read Blob Response' },
   0x0e: { meaning: 'Read Multiple Request' },

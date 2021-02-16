@@ -1,6 +1,7 @@
 import { getDefaultParser, getNestParser } from '@/parser/util';
 import { BleAdvertisementParser } from '@/parser/ble/adv';
 import { attParser } from '@/parser/ble/hci/att';
+import { smpParser } from '@/parser/ble/hci/smp';
 
 const HciErrorCodes = {
   0x00: { meaning: 'Success' },
@@ -90,7 +91,7 @@ const HciErrorCodes = {
 const aclStartParser = getDefaultParser(parser => {
   parser.uint16le('length').enum('cid', 'uint16le', {
     list: {
-      6: { meaning: 'SMP' },
+      6: { meaning: 'SMP', choice: smpParser },
       5: { meaning: 'SIGNALING' },
       4: { meaning: 'ATT', choice: attParser },
     },
@@ -169,9 +170,85 @@ const onHciEventParser = getDefaultParser(parser => {
     });
 });
 
+const onHciCommandParser = getDefaultParser(parser => {
+  parser
+    .uint16le('opCode')
+    .uint8('length')
+    .enum('opCode', null, {
+      list: {
+        0x2001: { meaning: 'LE Set Event Mask' },
+        0x2002: { meaning: 'LE Read Buffer Size' },
+        0x2003: { meaning: 'LE Read Local Supported Features' },
+        0x2005: { meaning: 'LE Set Random Address' },
+        0x2006: { meaning: 'LE Set Advertising Parameters' },
+        0x2007: { meaning: 'LE Read Advertising Channel TX Power' },
+        0x2008: { meaning: 'LE Set Advertising Data' },
+        0x2009: { meaning: 'LE Set Scan Response Data' },
+        0x200a: { meaning: 'LE Set Advertise Enable' },
+        0x200b: { meaning: 'LE Set Scan Parameters' },
+        0x200c: { meaning: 'LE Set Scan Enable' },
+        0x200d: { meaning: 'LE Create Connection' },
+        0x200e: { meaning: 'LE Create Connection Cancel' },
+        0x200f: { meaning: 'LE Read White List Size' },
+        0x2010: { meaning: 'LE Clear White Lis' },
+        0x2011: { meaning: 'LE Add Device To White List' },
+        0x2012: { meaning: 'LE Remove Device From White List' },
+        0x2013: { meaning: 'LE Connection Update' },
+        0x2014: { meaning: 'LE Set Host Channel Classification' },
+        0x2015: { meaning: 'LE Read Channel Map' },
+        0x2016: { meaning: 'LE Read Remote Used Features' },
+        0x2017: { meaning: 'LE Encrypt' },
+        0x2018: { meaning: 'LE Rand' },
+        0x2019: { meaning: 'LE Start Encryption' },
+        0x201a: { meaning: 'LE Long Term Key Requested Reply' },
+        0x201b: { meaning: 'LE Long Term Key Requested Negative Reply' },
+        0x201c: { meaning: 'LE Read Supported States' },
+        0x201d: { meaning: 'LE Receiver Test' },
+        0x201e: { meaning: 'LE Transmitter Test' },
+        0x201f: { meaning: 'LE Test End Command' },
+        0x2020: { meaning: 'LE Remote Connection Parameter Request Reply' },
+        0x2021: {
+          meaning: 'LE Remote Connection Parameter Request Negative Reply',
+        },
+        0x2022: { meaning: 'LE Set Data Length' },
+        0x2023: { meaning: 'LE Read Suggested Default Data Length' },
+        0x2024: { meaning: 'LE Write Suggested Default Data Length' },
+        0x2026: {
+          meaning: 'LE Read Local P256 Public Key 37 0x2025 LE Generate DHKey',
+        },
+        0x2027: { meaning: 'LE Add Device to Resolving List' },
+        0x2028: { meaning: 'LE Remove Device from Resolving List' },
+        0x2029: { meaning: 'LE Clear Resolving List' },
+        0x202a: { meaning: 'LE Read Resolving List Size' },
+        0x202b: { meaning: 'LE Read Peer Resolvable Address' },
+        0x202c: { meaning: 'LE Read Local Resolvable Address' },
+        0x202d: { meaning: 'LE Set Address Resolution Enable' },
+        0x202e: { meaning: 'LE Set Resolvable Private Address Timeout' },
+        0x202f: { meaning: 'LE Read Maximum Data Length' },
+        0x0406: { meaning: 'Disconnect' },
+        0x041d: { meaning: 'Read Remote Version Information' },
+        0x0c01: { meaning: 'Set Event Mask' },
+        0x0c03: { meaning: 'Reset' },
+        0x0c2d: { meaning: 'Read Transmit Power Level' },
+        0x0c31: { meaning: 'Set Controller To Host Flow Control (optional)' },
+        0x0c33: { meaning: 'Host Buffer Size (optional)' },
+        0x0c35: { meaning: 'Host Number Of Completed Packets (optional)' },
+        0x0c63: { meaning: 'Set Event Mask Page' },
+        0x0c7b: { meaning: 'Read Authenticated Payload Timeout' },
+        0x0c7c: { meaning: 'Write Authenticated Payload Timeout' },
+        0x1001: { meaning: 'Read Local Version Information' },
+        0x1002: { meaning: 'Read Local Supported Commands (optional)' },
+        0x1003: { meaning: 'Read Local Supported Features' },
+        0x1009: { meaning: 'Read BD_ADDR' },
+        0x1405: { meaning: 'Read RSSI' },
+      },
+    });
+});
+
 export const BleHciParser = getDefaultParser(parser => {
   parser.endianess('little').enum('evnetType', 'uint8', {
     list: {
+      1: { meaning: 'HCI_COMMAND_PKT', choice: onHciCommandParser },
       2: { meaning: 'HCI_ACLDATA_PKT', choice: onHciAclDataParser },
       4: { meaning: 'HCI_EVENT_PKT', choice: onHciEventParser },
     },
